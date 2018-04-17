@@ -23,7 +23,7 @@ function wechatPrepay() {
         mch_id: wxConfig.mch_id,
         nonce_str: getNonceStr(),
         notify_url: 'http://test.guanmai.cn/v587',
-        out_trade_no: 'T01230234211',
+        out_trade_no: getNonceStr(),
         spbill_create_ip: '203.195.209.90',
         total_fee: 1, //sum,
         trade_type: 'APP'
