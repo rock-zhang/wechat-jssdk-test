@@ -2,9 +2,7 @@ var redis = require("redis");
 var https = require('https');
 var qs = require('qs');
 var redisClient = redis.createClient(6379, 'localhost');
-
-var wxConfig = {
-};
+var wxConfig = require('./config.json');
 
 function fetchAccessToken(cb) {
     var data = {
@@ -19,33 +17,35 @@ function fetchAccessToken(cb) {
         method: 'GET'
     };
 
-    var req = https.request(options, function(res) {
-        console.log("accessToken statusCode: ", res.statusCode);
+    var req = https.request(options, function (res) {
         res.setEncoding('utf-8');
 
-        res.on('data', function(d) {
+        res.on('data', function (d) {
             var jsonData = JSON.parse(d);
-            console.log(jsonData)
 
-            if(jsonData.access_token)
-            redisClient.setex('accessToken', jsonData.expires_in, jsonData.access_token, function(err) {
-                if (err) {
-                    console.error('accessToken写入redis失败：', err);
-                } else {
-                    console.log('accessToken写入redis成功：', jsonData.access_token);
-                    cb && cb(jsonData.access_token);
-                }
-            });
+            console.log('jsonData:', jsonData)
+            if (jsonData.access_token) {
+                redisClient.setex('accessToken', jsonData.expires_in, jsonData.access_token, function (err) {
+                    if (err) {
+                        console.error('accessToken写入redis失败：', err);
+                    } else {
+                        console.log('accessToken写入redis成功：', jsonData.access_token);
+                        cb && cb(jsonData.access_token);
+                    }
+                });
+            } else {
+                console.log('fetchAccessToken errcode:', jsonData)
+            }
         });
     });
-    req.on('error', function(e) {
-        console.error('fetchAccessToken error', e);
+    req.on('error', function (e) {
+        console.error('fetchAccessToken error: ', e);
     });
     req.end();
 };
 
 exports.getAccessToken = function getAccessToken(cb) {
-    redisClient.get('accessToken', function(err, accessToken) {
+    redisClient.get('accessToken', function (err, accessToken) {
         if (err || !accessToken) {
             console.error('accessToken not found...， go fetch..');
             fetchAccessToken(cb);
